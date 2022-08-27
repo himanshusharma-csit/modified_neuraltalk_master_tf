@@ -1,9 +1,12 @@
 import os
 from Utils.CaptionLoader import load_captions, process_captions
 from Utils.Dataset import split_dataset
+from Utils.ImageEncoder import generate_inception_image_encoder
 
 # 1. PREPROCESS THE CAPTION DATASET
 # The address of the caption file that contains all the captions associated with the dataset
+
+
 caption_filepath = os.path.abspath('Data\Flickr_8K\captions.txt')
 
 # Read the captions of the flickr 8k dataset into the main memory
@@ -20,3 +23,8 @@ processed_image_captions = process_captions(unprocessed_image_captions)
 training_images, testing_images = split_dataset(list(processed_image_captions.keys()))
 
 # 2. PREPROCESS THE IMAGES
+# Generate the image encoding model
+image_encoder = generate_inception_image_encoder()
+
+
+
