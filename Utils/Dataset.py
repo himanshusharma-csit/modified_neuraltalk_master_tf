@@ -1,4 +1,5 @@
 import os.path
+from tqdm import tqdm
 import tensorflow as tf
 
 
@@ -14,8 +15,8 @@ def split_dataset(image_names):
     # Find the total number of images and split the data into the ratio of 80:20 for training and testing
     data_length = len(image_names)
     # Use 80% of images for training
-    training_data_size = int(data_length * 0.8)
-
+    training_data_size = int(data_length * 0.2)
+    # Return the fist 6472 images as training data and the rest as testing
     return image_names[:training_data_size], image_names[training_data_size:]
 
 
@@ -28,31 +29,34 @@ def load_images(directory_name, training_image_names, image_encoder):
     training_image_names = tf.data.TextLineDataset.from_tensor_slices(training_image_names)
 
     # Now, map this training_image_name tf.dataset with the actual images and generate their new tf.dataset as well
-    training_images = list(map(lambda image_name: load_image(directory_name, image_name.decode(), x, y, channels), training_image_names.as_numpy_iterator()))
-    training_image_dataset = tf.data.Dataset.from_tensor_slices(training_images)
+    # training_image_dataset = list(map(lambda image_name: load_image(directory_name, image_name, x, y, channels), training_image_names.as_numpy_iterator()))
+    training_image_dataset = list(
+        map(lambda image_name: load_image(directory_name, image_name.decode(), x, y, channels),
+            training_image_names.as_numpy_iterator()))
 
-    # Once both the datasets have been prepared, return the dataset
-    return training_image_names, training_image_dataset
+    # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
+    return training_image_dataset
 
 
 # This method loads the image referenced by its path into the main memory
 def load_image(directory_name, image_name, x, y, channels):
     # Generate the absolute image path
-    absolute_image_path = os.path.join(directory_name, str(image_name))
-
+    absolute_image_path = os.path.join(directory_name, image_name)
     # Read the image file into the main memory
     image_file = tf.io.read_file(absolute_image_path)
-
     # Convert the image file into tensors of three RGB channel format
     image = tf.image.decode_image(image_file, channels=channels)
-
-    # Resize the image to the
-    return tf.image.resize(image, (x, y))
+    # Resize the image to the required dimension
+    image = tf.image.resize(image, (x, y))
+    # Return the image_name along with the actual image tensor
+    return image_name, image
 
 
 # This method extracts the features of the training images using the image encoder model
-def extract_features(image_encoder, training_images):
-    feature_list = list(training_images.map(lambda image: tf.keras.applications.inception_v3.preprocess_input(image)))
+def extract_features(image_encoder, training_image_dataset):
+    # Extract all the image tensors from our training image dataset
+    training_image_tensors = list(map(lambda image_element: image_element[1], training_image_dataset))
 
-    # Create a tf.Dataset for the feature list and return
-    return tf.data.Dataset.from_tensor_slices(feature_list)
+    # Recreate a batched version of tf.Dataset for feature extraction
+    # We want to process each image one by one, so setting batch size to 1
+    batched_dataset = tf.data.Dataset.from_tensor_slices(training_image_tensors).batch(1)

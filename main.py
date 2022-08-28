@@ -28,6 +28,8 @@ training_image_names, testing_image_names = split_dataset(list(processed_image_c
 image_encoder = generate_inception_image_encoder()
 
 # Load the training images into the main memory of the predefined input size
-training_image_names, training_image_dataset = load_images(image_directory_path, training_image_names, image_encoder)
+training_image_dataset = load_images(image_directory_path, training_image_names, image_encoder)
 
+# Extract the features of the training images
+image_features = extract_features(image_encoder, training_image_dataset)
 
