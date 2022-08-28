@@ -9,6 +9,7 @@ from Utils.ImageEncoder import generate_inception_image_encoder
 
 caption_file_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\captions.txt')
 image_directory_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\Images')
+image_features_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Features\Flickr_8K')
 
 # Read the captions of the flickr 8k dataset into the main memory
 # The captions contains labeled dataset where each image id is associated with five captions. See example below
@@ -31,5 +32,5 @@ image_encoder = generate_inception_image_encoder()
 training_image_dataset = load_images(image_directory_path, training_image_names, image_encoder)
 
 # Extract the features of the training images
-image_features = extract_features(image_encoder, training_image_dataset)
+image_features = extract_features(image_features_path, image_encoder, training_image_dataset)
 
