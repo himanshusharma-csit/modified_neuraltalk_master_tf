@@ -2,11 +2,10 @@ import os
 from Utils.CaptionLoader import load_captions, process_captions
 from Utils.Dataset import split_dataset, load_images, extract_features
 from Utils.ImageEncoder import generate_inception_image_encoder
+from Utils.TextDataset import preprocess_text_dataset
 
 # 1. PREPROCESS THE CAPTION DATASET
 # The address of the caption file that contains all the captions associated with the dataset
-
-
 caption_file_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\captions.txt')
 image_directory_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\Images')
 image_features_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Features\Flickr_8K')
@@ -32,5 +31,10 @@ image_encoder = generate_inception_image_encoder()
 training_image_dataset = load_images(image_directory_path, training_image_names, image_encoder)
 
 # Extract the features of the training images
+# Image features have been extracted for now, so commenting this code section
 image_features = extract_features(image_features_path, image_encoder, training_image_dataset)
 
+# 3. PREPROCESS THE CAPTIONS DATASET (CAPTION PREPROCESSING)
+# Preprocess the text by converting  loit into lowercase and appending start and end tokens to it
+# Then generate the labeled dataset in the form of X and Y for our problem
+train_X, train_Y = preprocess_text_dataset(image_features_path, training_image_names, processed_image_captions)
