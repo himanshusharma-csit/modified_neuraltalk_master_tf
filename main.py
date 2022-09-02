@@ -2,6 +2,7 @@ import os
 import tensorflow as tf
 from Utils.CaptionLoader import load_captions, process_captions
 from Utils.Dataset import split_dataset, load_images, generate_batched_dataset
+from Utils.FeatureEncoder import generate_feature_encoder
 from Utils.ImageEncoder import generate_inception_image_encoder
 from Utils.TextDataset import preprocess_text_dataset
 
@@ -15,6 +16,8 @@ image_features_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Features
 batch_size = 64
 # Buffer size: The sampling buffer size from where the batch is sampled
 buffer_size = 1000
+# Multimodal embedding size of model
+embedding_size = 64
 
 # Read the captions of the flickr 8k dataset into the main memory
 # The captions contains labeled dataset where each image id is associated with five captions. See example below
@@ -48,3 +51,6 @@ with tf.device('/CPU:0'):
 
     # 4. DATASET ABSTRACTION (GENERATE A TF.DATASET VERSION OF DATA)
     image_captioning_dataset = generate_batched_dataset(batch_size, buffer_size, train_X, train_Y)
+
+    # 5. GENERATE THE IMAGE ENCODER FOR ENCODING IMAGE FEATURES TO A MULTIMODAL EMBEDDING
+    feature_encoder = generate_feature_encoder(embedding_size)

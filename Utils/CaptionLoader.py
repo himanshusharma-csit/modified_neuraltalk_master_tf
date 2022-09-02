@@ -7,6 +7,7 @@ class CaptionLoader:
 def load_captions(caption_path):
     with open(caption_path, 'r') as caption_file:
         captions = caption_file.read()
+        print('>>> Dataset loading completed...')
         return captions
 
 
@@ -36,4 +37,5 @@ def process_captions(unprocessed_captions):
         else:
             processed_captions[image] = [caption]
 
+    print('>>> Caption processing completed...')
     return processed_captions
