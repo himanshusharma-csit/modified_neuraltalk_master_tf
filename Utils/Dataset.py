@@ -79,3 +79,31 @@ def get_image_features_filename(image_features_path, image_element):
     image_name = image_name.replace('.jpg', '.npy')
     # Generate the absolute image feature path and return
     return os.path.join(image_features_path, image_name)
+
+
+# This method generates a batched dataset version of the training image and labels
+def generate_batched_dataset(batch_size, buffer_size, train_X, train_Y):
+    image_feature_dataset = list()
+    # Load the extracted features of the images now, we require them for training
+    for image_location in train_X:
+        # Load the features of the current image
+        image_feature = load_features(image_location)
+        image_feature_dataset.append(image_feature)
+
+    # Now, generate a new tf.dataset instance from the above list slices
+    image_feature_dataset = tf.data.Dataset.from_tensor_slices((image_feature_dataset, train_Y))
+
+    # Generate a batched dataset by shuffling the dataset into a user defined buffer size and then filtering the batch from there
+    image_feature_dataset.shuffle(buffer_size=buffer_size).batch(batch_size=batch_size)
+    # Execute the prefetch function to keep next training samples in memory.. this yields optimization
+    image_feature_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    # Dataset preparation has been complete, now return
+    return image_feature_dataset
+
+
+# This method loads the features of the given image filename
+def load_features(image_name):
+    # Replace the .jpg extension with the npy extension for loading the
+    image_name = image_name = image_name.replace('.jpg', '.npy')
+    image_feature = np.load(image_name)
+    return image_feature
