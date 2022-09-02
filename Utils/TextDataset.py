@@ -1,5 +1,6 @@
 import os.path
 import re
+from tqdm import tqdm
 from keras_preprocessing.text import Tokenizer
 from keras.utils import pad_sequences
 
@@ -27,7 +28,8 @@ def preprocess_text_dataset(image_features_path, training_image_names, processed
     train_x, train_y = prepare_labeled_dataset(image_features_path, training_dataset, tokenizer, maximum_caption_length,
                                                vocabulary_size)
     # Dataset has been prepared, now return the training data and labels
-    return train_x, train_y
+    return train_x, train_y, tokenizer
+
 
 # This method converts the input caption dataset into lowercase and also removes any special symbols contained in them
 def clean_image_captions(processed_image_captions):
@@ -105,7 +107,7 @@ def prepare_labeled_dataset(image_features_path, training_dataset, tokenizer, ma
     # Create two empty new lists
     x, y = list(), list()
     # Iterate over each training dataset and fetch the sequential word representations for the captions
-    for image_name, captions in training_dataset.items():
+    for image_name, captions in tqdm(training_dataset.items()):
         absolute_image_path = os.path.join(image_features_path, image_name)
         # Now iterate over the five captions associated with the current image and fetch their encoding
         for caption in captions:

@@ -1,5 +1,6 @@
 import os.path
 import numpy as np
+from tqdm import tqdm
 import tensorflow as tf
 
 
@@ -33,7 +34,7 @@ def load_images(directory_name, training_image_names, image_encoder):
     # training_image_dataset = list(map(lambda image_name: load_image(directory_name, image_name, x, y, channels), training_image_names.as_numpy_iterator()))
     training_image_dataset = list(
         map(lambda image_name: load_image(directory_name, image_name.decode(), x, y, channels),
-            training_image_names.as_numpy_iterator()))
+            tqdm(training_image_names.as_numpy_iterator())))
 
     # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
     print('>>> Image features saved in the user defined directory...')
@@ -87,7 +88,7 @@ def get_image_features_filename(image_features_path, image_element):
 def generate_batched_dataset(batch_size, buffer_size, train_X, train_Y):
     image_feature_dataset = list()
     # Load the extracted features of the images now, we require them for training
-    for image_location in train_X:
+    for image_location in tqdm(train_X):
         # Load the features of the current image
         image_feature = load_features(image_location)
         image_feature_dataset.append(image_feature)
