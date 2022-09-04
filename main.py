@@ -48,7 +48,7 @@ with tf.device('/CPU:0'):
 
 # Extract the features of the training images
 # Image features have been extracted for now, so commenting this code section
-# image_features = extract_features(image_features_path, image_encoder, training_image_dataset)
+# extract_features(image_features_path, image_encoder, training_image_dataset)
 
 # 3. PREPROCESS THE CAPTIONS DATASET (CAPTION PREPROCESSING)
 # Preprocess the text by converting  loit into lowercase and appending start and end tokens to it
@@ -61,3 +61,6 @@ image_captioning_dataset = generate_batched_dataset(batch_size, buffer_size, tra
 
 # 5. GENERATE THE IMAGE ENCODER FOR ENCODING IMAGE FEATURES TO A MULTIMODAL EMBEDDING
 feature_encoder = generate_feature_encoder(embedding_size)
+
+# 6. GENERATE THE GRU BASED DECODER FOR THE CAPTIONS
+decoder = generate_decoder(hidden_units, embedding_size, len(tokenizer.word_index))

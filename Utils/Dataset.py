@@ -98,7 +98,7 @@ def generate_batched_dataset(batch_size, buffer_size, train_X, train_Y):
 
     # Generate a batched dataset by shuffling the dataset into a user defined buffer size and then filtering the batch from there
     image_feature_dataset.shuffle(buffer_size=buffer_size).batch(batch_size=batch_size)
-    # Execute the prefetch function to keep next training samples in memory.. this yields optimization
+    # Execute the prefetch function to keep next training samples in memory. This yields optimization
     image_feature_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     # Dataset preparation has been complete, now return
     print('>>> Batched dataset generated...')
