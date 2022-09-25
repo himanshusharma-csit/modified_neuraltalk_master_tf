@@ -1,6 +1,8 @@
-import tensorflow as tf
+import os
+from time import strftime, gmtime
 
-import keras
+import tensorflow as tf
+import pickle as pkl
 
 
 # This class encodes the numpy extracted features into a multimodal hidden embedding
@@ -22,10 +24,28 @@ class FeatureEncoder(tf.keras.Model):
         # Return the activation
         return image_encoding
 
+    # Saves the state of our model for future use
+    # Save the python instance into an external file for future visualization pruposes
+    def save_model(self, model_saving_directory):
+        # Epoch number to be inserted as a name of the json file
+        file_name = 'FeatureEncoder'
+
+        # Time stamp of the completion to be added to the file name
+        time_stamp = strftime("%d_%b_%H_%M_%S", gmtime())
+
+        # Generate the overall name of the file
+        file_name = os.path.join(model_saving_directory + file_name + time_stamp + '.json')
+
+        # Create a new json file with the above specified filename and dump the history there
+        with open(file_name, "wb") as history_file:
+            pkl.dump(self, history_file)
+
 
 # This method returns an instance of the feature encoder based on the user defined image encoding size
-def generate_feature_encoder(embedding_size):
+def generate_feature_encoder(batch_size, embedding_size):
     # Initialize the feature encoder class using user defined embedding size
     feature_encoder = FeatureEncoder(embedding_size)
+    # Build the model for initializing it for saving
+    feature_encoder.build(input_shape=(batch_size,1,2048))
     # Return the generated feature encoder
     return feature_encoder

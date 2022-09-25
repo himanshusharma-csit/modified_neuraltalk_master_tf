@@ -16,7 +16,7 @@ def split_dataset(image_names):
     # Find the total number of images and split the data into the ratio of 80:20 for training and testing
     data_length = len(image_names)
     # Use 80% of images for training
-    training_data_size = int(data_length * 0.8)
+    training_data_size = int(data_length * 0.01)
     # Return the fist 6472 images as training data and the rest as testing
     print('>>> Dataset splitting completed...')
     return image_names[:training_data_size], image_names[training_data_size:]
@@ -37,7 +37,7 @@ def load_images(directory_name, training_image_names, image_encoder):
             tqdm(training_image_names.as_numpy_iterator())))
 
     # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
-    print('>>> Image features saved in the user defined directory...')
+    print('>>> Training image retrieved from the user defined directory...')
     return training_image_dataset
 
 
@@ -97,9 +97,9 @@ def generate_batched_dataset(batch_size, buffer_size, train_X, train_Y):
     image_feature_dataset = tf.data.Dataset.from_tensor_slices((image_feature_dataset, train_Y))
 
     # Generate a batched dataset by shuffling the dataset into a user defined buffer size and then filtering the batch from there
-    image_feature_dataset.shuffle(buffer_size=buffer_size).batch(batch_size=batch_size)
+    image_feature_dataset = image_feature_dataset.shuffle(buffer_size=buffer_size).batch(batch_size=batch_size)
     # Execute the prefetch function to keep next training samples in memory. This yields optimization
-    image_feature_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    image_feature_dataset = image_feature_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     # Dataset preparation has been complete, now return
     print('>>> Batched dataset generated...')
     return image_feature_dataset

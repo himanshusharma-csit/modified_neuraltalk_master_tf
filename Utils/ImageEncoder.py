@@ -19,7 +19,7 @@ def generate_inception_image_encoder():
     output_layer = inceptionv3.layers[-1].output
 
     # Now generate a new image encoder using the above input and hidden layers information
-    image_encoder = tf.keras.models.Model(inputs=input_layers, outputs=output_layer, name="InceptionV3 Feature Extractor")
+    image_encoder = tf.keras.Model(inputs=input_layers, outputs=output_layer, name="InceptionV3 Feature Extractor")
 
     # The model has been generated, now return
     print('>>> Inception v3 feature extractor initialized...')

@@ -1,7 +1,7 @@
 import os.path
 import re
 from tqdm import tqdm
-from keras_preprocessing.text import Tokenizer
+import tensorflow as tf
 from keras.utils import pad_sequences
 
 
@@ -21,20 +21,19 @@ def preprocess_text_dataset(image_features_path, training_image_names, processed
     training_dataset = fetch_training_captions(training_image_names, processed_image_captions)
 
     # We now have cleaned and processed captions of our training image samples, we now associate index with each of the word
-    # That will be contained in our vocabulary using the tf.Keras tokenizer
-    tokenizer, vocabulary_size, maximum_caption_length = create_word_indices(training_dataset)
+    # That will be contained in our vocabulary using the tf.Keras text_vectorizer
+    text_vectorizer, maximum_caption_length = create_word_indices(training_dataset)
 
     # Create labelled dataset tuple now
-    train_x, train_y = prepare_labeled_dataset(image_features_path, training_dataset, tokenizer, maximum_caption_length,
-                                               vocabulary_size)
+    train_x, train_y = prepare_labeled_dataset(image_features_path, training_dataset, text_vectorizer, maximum_caption_length)
     # Dataset has been prepared, now return the training data and labels
-    return train_x, train_y, tokenizer
+    return train_x, train_y, text_vectorizer, maximum_caption_length
 
 
 # This method converts the input caption dataset into lowercase and also removes any special symbols contained in them
 def clean_image_captions(processed_image_captions):
     # Iterate over all the training images and fetch the captions associated with them
-    for _, captions in processed_image_captions.items():
+    for _, captions in tqdm(processed_image_captions.items()):
         # This fetches the list of captions associated with each image, now iterate over them as well as access them individually
         for index, caption in enumerate(captions):
             # Remove special symbols from the captions using regular expression, and convert to lower as well
@@ -63,7 +62,7 @@ def get_word_token_list(clean_caption):
 def fetch_training_captions(training_image_names, processed_image_captions):
     training_captions = dict()
     # Iterate over the training images and fetch their processed captions
-    for image_name in training_image_names:
+    for image_name in tqdm(training_image_names):
         # Fetch the processed captions of the current training image
         image_captions = processed_image_captions[image_name]
         # Append the <start> and <end> token into the captions
@@ -90,20 +89,28 @@ def create_word_indices(training_captions):
     maximum_caption_length = max(len(caption.split()) for caption in flat_training_captions)
 
     # Initialize keras tokenizer
-    tokenizer = Tokenizer()
+    # tokenizer = Tokenizer()
+    # Create a TextVectorization layer
+    max_vocabulary = 7000
+    text_vectorizer = tf.keras.layers.experimental.preprocessing.TextVectorization(max_tokens=max_vocabulary, standardize='lower_and_strip_punctuation', split='whitespace', ngrams=None, output_mode='int', output_sequence_length=maximum_caption_length, pad_to_max_tokens=True)
+
+    #Adapt the text vectorizor on the captions
+    print(">>> Adapting tokenizer on text...")
+    text_vectorizer.adapt(flat_training_captions)
 
     # Fit the tokenizer on the captions to prepare a word vocabulary
-    tokenizer.fit_on_texts(flat_training_captions)
+
+    # tokenizer.fit_on_texts(flat_training_captions)
 
     # Get the size of the vocabulary
-    vocabulary_size = len(tokenizer.word_index) + 1
+    # vocabulary_size = len(tokenizer.word_index) + 1
 
     # Return the tokenizer, vocabulary size and max caption size
-    return tokenizer, vocabulary_size, maximum_caption_length
+    return text_vectorizer, maximum_caption_length
 
 
 # This method prepares the X and Y format training data for the given input datas
-def prepare_labeled_dataset(image_features_path, training_dataset, tokenizer, maximum_caption_length, vocabulary_size):
+def prepare_labeled_dataset(image_features_path, training_dataset, text_vectorizer, maximum_caption_length):
     # Create two empty new lists
     x, y = list(), list()
     # Iterate over each training dataset and fetch the sequential word representations for the captions
@@ -112,10 +119,9 @@ def prepare_labeled_dataset(image_features_path, training_dataset, tokenizer, ma
         # Now iterate over the five captions associated with the current image and fetch their encoding
         for caption in captions:
             # Convert the input captions into word indices based on the vocabulary
-            caption_word_indices = tokenizer.texts_to_sequences([caption])[0]
+            caption_word_indices = text_vectorizer([caption])
             # Pad the input caption to the same length as of the maximum length to make the dataset simpler for training
-            caption_word_indices = pad_sequences([caption_word_indices], maxlen=maximum_caption_length, padding='post')[
-                0]
+            # caption_word_indices = pad_sequences([caption_word_indices], maxlen=maximum_caption_length, padding='post')[0]
             # Now append each image name and caption indices as a separate training dataset entry
             x.append(absolute_image_path)
             y.append(caption_word_indices)
