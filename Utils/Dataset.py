@@ -14,14 +14,16 @@ def split_dataset(image_names):
     # Randomize the data
     print('>>> Randomizing the dataset...')
     image_names = tf.random.shuffle(image_names)
+
     # Find the total number of images and split the data into the ratio of 80:20 for training and testing
     data_length = len(image_names)
+
     # Use 80% of images for training, 10% for validation and 10% for testing
-    training_data_size = int(data_length * 0.01)
+    training_data_size = int(data_length * 0.8)
     validation_data_size = int(data_length * 0.1)
 
     # Calculate the splitting index based on the training, validation and testing lengths
-    validation_data_start_index, validation_data_end_index = training_data_size, training_data_size+validation_data_size
+    validation_data_start_index, validation_data_end_index = training_data_size, training_data_size + validation_data_size
     testing_data_start_index = validation_data_end_index
 
     # Return the fist 6472 images as training data and the rest as testing
@@ -36,17 +38,13 @@ def load_images(directory_name, training_image_names, image_encoder):
     # Read the input specifications of the image encoder
     _, x, y, channels = image_encoder.input_shape
 
-    # Create a tf.dataset of the training_image_names for loading the actual images into main memory
-    training_image_names = tf.data.TextLineDataset.from_tensor_slices(training_image_names)
-
     # Now, map this training_image_name tf.dataset with the actual images and generate their new tf.dataset as well
     # training_image_dataset = list(map(lambda image_name: load_image(directory_name, image_name, x, y, channels), training_image_names.as_numpy_iterator()))
-    training_image_dataset = list(
-        map(lambda image_name: load_image(directory_name, image_name.decode(), x, y, channels),
-            tqdm(training_image_names.as_numpy_iterator())))
+    training_image_dataset = list( map(lambda image_name: load_image(directory_name, tf.compat.as_str_any(image_name.numpy()), x, y, channels),
+                                       tqdm(training_image_names, desc="LOADING IMAGES >>> ", ascii=True, ncols=100)))
 
     # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
-    print('>>> Training image retrieved from the user defined directory...')
+    print('>>> Training images retrieved from the user defined directory...')
     return training_image_dataset
 
 

@@ -25,7 +25,7 @@ def process_captions(unprocessed_captions):
 
     # Now, iterate over image_caption_sentences, and split the sentences into (image_name, caption) format which was initially a single image_caption_sentence
     # Separate by a comma, so we use this comma as the splitting condition
-    for image_caption_sentence in tqdm(image_caption_sentences, ncols=100):
+    for image_caption_sentence in tqdm(image_caption_sentences, desc="PROCESSING CAPTIONS >>>", ascii=True, ncols=100):
         # There are chances that comma(,) is included into the captions as well, so setting the split on the first comma only.
         # Rest all commas needs to be ignored as they are part of the caption
         image_name, caption = image_caption_sentence.split(sep=',', maxsplit=1)

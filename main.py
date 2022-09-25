@@ -1,19 +1,16 @@
 import os
 import tensorflow as tf
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 from Utils.CaptionLoader import load_captions, process_captions
 from Utils.Dataset import split_dataset, load_images, generate_batched_dataset
 from Utils.Decoder import generate_decoder
 from Utils.FeatureEncoder import generate_feature_encoder
-from Utils.ImageEncoder import generate_inception_image_encoder
+from Utils.ImageEncoder import generate_inception_feature_extractor
 from Utils.TextDataset import preprocess_text_dataset
-from Utils.ModelDetails import ModelDetails, training_step, generate_sparse_categorical_crossentropy_loss, \
-    generate_adam_optimizer
-
-# 1. PREPROCESS THE CAPTION DATASET
 from Utils.Training import initialize_pipeline_training, load_pipeline_weights
+from Utils.ModelDetails import ModelDetails, generate_sparse_categorical_crossentropy_loss, generate_adam_optimizer
 
+# Directory paths for the project
 caption_file_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\captions.txt')
 image_directory_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\Images')
 image_features_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Features\Flickr_8K')
@@ -23,17 +20,18 @@ decoder_saving_path = os.path.abspath('D:\modified_neuraltalk_master_tf\DecoderC
 
 # The hyperparameters for batching the dataset
 # Batch size: The number of training samples in each training sample
-batch_size = 64
+batch_size = 128
 # Buffer size: The sampling buffer size from where the batch is sampled
 buffer_size = 1000
 # Multimodal embedding size of model
-embedding_size = 256
+embedding_size = 512
 # Number of hidden units in the decoder
 hidden_units = 256
 
 # Log all the information about whether the operation is using CPU or GPU
 # tf.debugging.set_log_device_placement(True)
 
+# 1. PREPROCESS THE CAPTION DATASET
 # Read the captions of the flickr 8k dataset into the main memory
 # The captions contains labeled dataset where each image id is associated with five captions. See example below
 # (1000268201_693b08cb0e.jpg,A child in a pink dress is climbing up a set of stairs in an entry way .)
@@ -45,11 +43,11 @@ unprocessed_image_captions = load_captions(caption_file_path)
 processed_image_captions = process_captions(unprocessed_image_captions)
 
 # Create training and testing image split
-training_image_names, testing_image_names = split_dataset(list(processed_image_captions.keys()))
+training_image_names, validation_image_names, testing_image_names = split_dataset(list(processed_image_captions.keys()))
 
 # 2. PREPROCESS THE IMAGES (FEATURE EXTRACTION)
 # Generate the image encoding model
-image_encoder = generate_inception_image_encoder()
+image_encoder = generate_inception_feature_extractor()
 
 # Load the training images into the main memory of the predefined input size
 with tf.device('/CPU:0'):
