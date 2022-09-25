@@ -12,14 +12,23 @@ class Dataset:
 # This method returns a list of testing and training samples
 def split_dataset(image_names):
     # Randomize the data
-    tf.random.shuffle(image_names)
+    print('>>> Randomizing the dataset...')
+    image_names = tf.random.shuffle(image_names)
     # Find the total number of images and split the data into the ratio of 80:20 for training and testing
     data_length = len(image_names)
-    # Use 80% of images for training
+    # Use 80% of images for training, 10% for validation and 10% for testing
     training_data_size = int(data_length * 0.01)
+    validation_data_size = int(data_length * 0.1)
+
+    # Calculate the splitting index based on the training, validation and testing lengths
+    validation_data_start_index, validation_data_end_index = training_data_size, training_data_size+validation_data_size
+    testing_data_start_index = validation_data_end_index
+
     # Return the fist 6472 images as training data and the rest as testing
     print('>>> Dataset splitting completed...')
-    return image_names[:training_data_size], image_names[training_data_size:]
+    return image_names[:training_data_size], \
+           image_names[validation_data_start_index:validation_data_end_index], \
+           image_names[testing_data_start_index:]
 
 
 # This method loads the list of images into the main memory and returns both the datasets namely training_image_names and training_images

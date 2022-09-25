@@ -7,7 +7,7 @@ class ImageEncoder:
 
 
 # This method generates an image encoder for the image captioning pipeline
-def generate_inception_image_encoder():
+def generate_inception_feature_extractor():
     # Load the preexisting cnn model
     inceptionv3 = tf.keras.applications.inception_v3.InceptionV3(include_top=False, weights='imagenet',
                                                                  input_shape=(224, 224, 3), pooling='avg')
