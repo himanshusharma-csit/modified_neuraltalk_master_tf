@@ -13,7 +13,7 @@ class Dataset:
 def split_dataset(image_names):
     # Randomize the data
     print('>>> Randomizing the dataset...')
-    image_names = tf.random.shuffle(image_names)
+    # image_names = tf.random.shuffle(image_names)
 
     # Find the total number of images and split the data into the ratio of 80:20 for training and testing
     data_length = len(image_names)
@@ -34,13 +34,13 @@ def split_dataset(image_names):
 
 
 # This method loads the list of images into the main memory and returns both the datasets namely training_image_names and training_images
-def load_images(directory_name, training_image_names, image_encoder):
+def load_images(directory_name, training_image_names, input_shape):
     # Read the input specifications of the image encoder
-    _, x, y, channels = image_encoder.input_shape
+    _, x, y, channels = input_shape
 
     # Now, map this training_image_name tf.dataset with the actual images and generate their new tf.dataset as well
     # training_image_dataset = list(map(lambda image_name: load_image(directory_name, image_name, x, y, channels), training_image_names.as_numpy_iterator()))
-    training_image_dataset = list( map(lambda image_name: load_image(directory_name, tf.compat.as_str_any(image_name.numpy()), x, y, channels),
+    training_image_dataset = list( map(lambda image_name: load_image(directory_name, image_name, x, y, channels),
                                        tqdm(training_image_names, desc="LOADING IMAGES >>> ", ascii=True, ncols=100)))
 
     # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
