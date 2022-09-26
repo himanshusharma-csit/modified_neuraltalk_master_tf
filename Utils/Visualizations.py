@@ -7,7 +7,7 @@ class Visualizations:
 
 
 def epoch_vs_loss_plot(loss_plot):
-    plt.plot(loss_plot.numpy())
+    plt.plot(loss_plot)
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('Loss Plot')

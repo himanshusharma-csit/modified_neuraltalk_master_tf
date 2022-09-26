@@ -44,8 +44,8 @@ def initialize_pipeline_training(image_captioning_dataset=None,
         decoder.save(filepath=model_manager.decoder_path, overwrite=True, save_format="tf")
         # Print the end epoch statistics
         epoch_end_statistics(epoch, start, total_loss / num_steps)
-    # Storing the epoch end loss value to plot later
-    loss_plot.append(total_loss / num_steps)
+        # Storing the epoch end loss value to plot later
+        loss_plot.append(total_loss / num_steps)
     # Return the loss_plot values to the main
     return loss_plot
 
