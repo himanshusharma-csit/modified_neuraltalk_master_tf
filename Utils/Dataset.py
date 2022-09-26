@@ -19,7 +19,7 @@ def split_dataset(image_names):
     data_length = len(image_names)
 
     # Use 80% of images for training, 10% for validation and 10% for testing
-    training_data_size = int(data_length * 0.8)
+    training_data_size = int(data_length * 0.01)
     validation_data_size = int(data_length * 0.1)
 
     # Calculate the splitting index based on the training, validation and testing lengths
@@ -41,7 +41,7 @@ def load_images(directory_name, training_image_names, input_shape):
     # Now, map this training_image_name tf.dataset with the actual images and generate their new tf.dataset as well
     # training_image_dataset = list(map(lambda image_name: load_image(directory_name, image_name, x, y, channels), training_image_names.as_numpy_iterator()))
     training_image_dataset = list( map(lambda image_name: load_image(directory_name, image_name, x, y, channels),
-                                       tqdm(training_image_names, desc="LOADING IMAGES >>> ", ascii=True, ncols=100)))
+                                       tqdm(training_image_names, desc="LOADING IMAGES >>> ", ascii=False, ncols=100)))
 
     # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
     print('>>> Training images retrieved from the user defined directory...')
@@ -95,7 +95,7 @@ def get_image_features_filename(image_features_path, image_element):
 def generate_batched_dataset(batch_size, buffer_size, train_X, train_Y):
     image_feature_dataset = list()
     # Load the extracted features of the images now, we require them for training
-    for image_location in tqdm(train_X):
+    for image_location in tqdm(train_X, desc="BATCHING DATASET >>> ", ascii=False, ncols=100):
         # Load the features of the current image
         image_feature = load_features(image_location)
         image_feature_dataset.append(image_feature)

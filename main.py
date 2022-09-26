@@ -1,37 +1,50 @@
 import os
 import tensorflow as tf
-import matplotlib.pyplot as plt
-from Utils.CaptionLoader import load_captions, process_captions
-from Utils.Dataset import split_dataset, load_images, generate_batched_dataset
 from Utils.Decoder import generate_decoder
-from Utils.FeatureEncoder import generate_feature_encoder
-from Utils.ImageEncoder import generate_inception_feature_extractor
+from Utils.Visualizations import epoch_vs_loss_plot
 from Utils.TextDataset import preprocess_text_dataset
-from Utils.Training import initialize_pipeline_training, load_pipeline_weights
+from Utils.Training import initialize_pipeline_training
+from Utils.FeatureEncoder import generate_feature_encoder
+from Utils.CaptionLoader import load_captions, process_captions
+from Utils.ImageEncoder import generate_inception_feature_extractor
+from Utils.Dataset import split_dataset, load_images, generate_batched_dataset
 from Utils.ModelDetails import ModelDetails, generate_sparse_categorical_crossentropy_loss, generate_adam_optimizer
 
-# Directory paths for the project
+# ------------------------------------------------------------------------------------------------------------------
+# 0.0 SETTING THE DIRECTORY AND FILE PATHS (FOR LOADING, SAVING AND STORING DATASET FILES)
+# ------------------------------------------------------------------------------------------------------------------
 caption_file_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\captions.txt')
 image_directory_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\Images')
 image_features_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Features\Flickr_8K')
 model_saving_path = os.path.abspath('D:\modified_neuraltalk_master_tf')
-encoder_saving_path = os.path.abspath('D:\modified_neuraltalk_master_tf\FeatureEncoderCheckpoints\Encoder.ckpt')
-decoder_saving_path = os.path.abspath('D:\modified_neuraltalk_master_tf\DecoderCheckpoints\Decoder.ckpt')
+encoder_checkpoint_path = os.path.abspath("D:\modified_neuraltalk_master_tf\FeatureEncoderCheckpoints\FE_Checkpoint")
+decoder_checkpoint_path = os.path.abspath("D:\modified_neuraltalk_master_tf\DecoderCheckpoints\D_Checkpoint")
 
-# The hyperparameters for batching the dataset
+# ------------------------------------------------------------------------------------------------------------------
+# 0.1 SETTING THE HYPER-PARAMETERS FOR OUR MODEL
+# ------------------------------------------------------------------------------------------------------------------
 # Batch size: The number of training samples in each training sample
 batch_size = 128
 # Buffer size: The sampling buffer size from where the batch is sampled
 buffer_size = 1000
 # Multimodal embedding size of model
-embedding_size = 512
+embedding_size = 256
 # Number of hidden units in the decoder
 hidden_units = 256
+# Inception v3 output dimension
+inception_model_output_size = None
 
+# ------------------------------------------------------------------------------------------------------------------
+# 0.1 (OPTIONAL) LOGGING ALL THE CPU/GPU TASKS OVER CONSOLE
+# ------------------------------------------------------------------------------------------------------------------
 # Log all the information about whether the operation is using CPU or GPU
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # tf.debugging.set_log_device_placement(True)
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+# ------------------------------------------------------------------------------------------------------------------
 # 1. PREPROCESS THE CAPTION DATASET
+# ------------------------------------------------------------------------------------------------------------------
 # Read the captions of the flickr 8k dataset into the main memory
 # The captions contains labeled dataset where each image id is associated with five captions. See example below
 # (1000268201_693b08cb0e.jpg,A child in a pink dress is climbing up a set of stairs in an entry way .)
@@ -45,54 +58,77 @@ processed_image_captions = process_captions(unprocessed_image_captions)
 # Create training and testing image split
 training_image_names, validation_image_names, testing_image_names = split_dataset(list(processed_image_captions.keys()))
 
+# ------------------------------------------------------------------------------------------------------------------
 # 2. PREPROCESS THE IMAGES (FEATURE EXTRACTION)
+# ------------------------------------------------------------------------------------------------------------------
 # Generate the image encoding model
-image_encoder = generate_inception_feature_extractor()
+image_encoder, inception_model_output_size = generate_inception_feature_extractor()
 
 # Load the training images into the main memory of the predefined input size
 with tf.device('/CPU:0'):
-    training_image_dataset = load_images(image_directory_path, training_image_names, image_encoder)
-    # testing_image_names = load_images(image_directory_path, testing_image_names, image_encoder)
+    training_image_dataset = load_images(image_directory_path, training_image_names, image_encoder.input_shape)
+    # validation_image_dataset = load_images(image_directory_path, validation_image_names, image_encoder.input_shape)
+    # testing_image_dataset = load_images(image_directory_path, testing_image_names, image_encoder.input_shape)
 
 # Extract the features of the training images
 # Image features have been extracted for now, so commenting this code section
-# extract_features(image_features_path, image_encoder, training_image_dataset)
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#     extract_features(image_features_path, image_encoder, training_image_dataset)
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+# ------------------------------------------------------------------------------------------------------------------
 # 3. PREPROCESS THE CAPTIONS DATASET (CAPTION PREPROCESSING)
+# ------------------------------------------------------------------------------------------------------------------
 # Preprocess the text by converting  loit into lowercase and appending start and end tokens to it
 # Then generate the labeled dataset in the form of X and Y for our problem
-train_X, train_Y, text_vectorizer, maximum_caption_length = preprocess_text_dataset(image_features_path, training_image_names,
-                                                            processed_image_captions)
-
+train_X, train_Y, text_vectorization, maximum_caption_length = preprocess_text_dataset(image_features_path,
+                                                                                       training_image_names,
+                                                                                       processed_image_captions)
+# ------------------------------------------------------------------------------------------------------------------
 # 4. DATASET ABSTRACTION (GENERATE A TF.DATASET VERSION OF DATA)
+# ------------------------------------------------------------------------------------------------------------------
 image_captioning_dataset = generate_batched_dataset(batch_size, buffer_size, train_X, train_Y)
 
+# ------------------------------------------------------------------------------------------------------------------
 # 5. GENERATE THE IMAGE ENCODER FOR ENCODING IMAGE FEATURES TO A MULTIMODAL EMBEDDING
-feature_encoder = generate_feature_encoder(batch_size, embedding_size)
-tf.keras.models.save_model(feature_encoder, filepath=model_saving_path)
-
+# ------------------------------------------------------------------------------------------------------------------
+feature_encoder = generate_feature_encoder(embedding_size=embedding_size, input_size=inception_model_output_size)
+# feature_encoder = tf.keras.models.load_model(filepath=encoder_checkpoint_path)
+# ------------------------------------------------------------------------------------------------------------------
 # 6. GENERATE THE GRU BASED DECODER FOR THE CAPTIONS
-decoder = generate_decoder(hidden_units, embedding_size, text_vectorizer.vocabulary_size(), maximum_caption_length)
-# tf.keras.models.save_model(decoder)
-
-# 7. GENERATE THE OPTIMIZERS AND LOSS FUNCTION
+# ------------------------------------------------------------------------------------------------------------------
+decoder = generate_decoder(batch_size=batch_size,
+                           hidden_units=hidden_units,
+                           embedding_size=embedding_size,
+                           vocabulary_size=text_vectorization.vocabulary_size(),
+                           maximum_caption_length=maximum_caption_length)
+# decoder = tf.keras.models.load_model(filepath=decoder_checkpoint_path)
+# ------------------------------------------------------------------------------------------------------------------
+# 7. GENERATE THE OPTIMIZERS AND LOSS FUNCTION AND SAVE ALL THE DETAILS IN THE MODEL_MANAGER
+# ------------------------------------------------------------------------------------------------------------------
 model_manager = ModelDetails(loss=generate_sparse_categorical_crossentropy_loss(),
                              optimizer=generate_adam_optimizer(),
                              batch_size=batch_size,
                              training_sample_count=len(train_X),
-                             encoder_path=encoder_saving_path,
-                             decoder_path=decoder_saving_path
-                             )
+                             encoder_path=encoder_checkpoint_path,
+                             decoder_path=decoder_checkpoint_path)
 
-#Initialize the model weights with the checkpoints
+# Initialize the model weights with the checkpoints
 # feature_encoder, decoder = load_pipeline_weights(model_manager, feature_encoder, decoder)
 
-loss_plot = initialize_pipeline_training(image_captioning_dataset, feature_encoder, decoder, text_vectorizer, model_manager)
+# ------------------------------------------------------------------------------------------------------------------
+# 8. MODEL TRAINING (TRAIN THE MODEL ON IMAGE FEATURES TO PREDICT THE CAPTIONS AND APPLY BACKPROPAGATION ACCORDINGLY TO ADJUST WEIGHTS)
+# ------------------------------------------------------------------------------------------------------------------
+loss_plot = initialize_pipeline_training(image_captioning_dataset=image_captioning_dataset,
+                                         feature_encoder=feature_encoder,
+                                         decoder=decoder,
+                                         text_vectorizer=text_vectorization,
+                                         model_manager=model_manager)
 
-plt.plot(loss_plot)
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.title('Loss Plot')
-plt.show()
+# ------------------------------------------------------------------------------------------------------------------
+# 8. VISUALIZING THE TRAINING (PLOT THE EPOCH VS LOSS GRAPH TO VISUALIZE MODEL TRAINING)
+# ------------------------------------------------------------------------------------------------------------------
+epoch_vs_loss_plot(loss_plot)
+
 
 print('Done')

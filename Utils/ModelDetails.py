@@ -39,7 +39,12 @@ def calculate_loss(loss_instance, real_value, predicted_value):
     return tf.reduce_mean(loss_)
 
 
-def training_step(image_tensor, target, feature_encoder, decoder, tokenizer, model_manager):
+def training_step(image_tensor=None,
+                  target=None,
+                  feature_encoder=None,
+                  decoder=None,
+                  tokenizer=None,
+                  model_manager=None):
     # Word to index mapping for training
     word_to_index = tf.keras.layers.StringLookup(mask_token="", vocabulary=tokenizer.get_vocabulary())
     # Set the loss to 0
