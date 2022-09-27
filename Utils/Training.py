@@ -5,7 +5,8 @@ import tensorflow as tf
 from Utils.ModelDetails import training_step
 
 # To avoid displaying the save format warning everytime, we, verbose the logging here
-absl.logging.set_verbosity(absl.logging.ERROR)
+# absl.logging.set_verbosity(absl.logging.ERROR)
+
 
 class Training:
     def __init__(self):
@@ -19,7 +20,7 @@ def initialize_pipeline_training(image_captioning_dataset=None,
                                  model_manager=None):
     loss_plot = []
     start_epoch = 0
-    EPOCHS = 5
+    EPOCHS = 10
     num_steps = model_manager.training_sample_count // model_manager.batch_size
     model_training_message()
 
@@ -40,8 +41,10 @@ def initialize_pipeline_training(image_captioning_dataset=None,
             # Add the batch loss to the overall total loss
             total_loss += t_loss
         # Save the encoder and decoder model states after every epoch
-        feature_encoder.save(filepath=model_manager.encoder_path, overwrite=True, save_format="tf")
-        decoder.save(filepath=model_manager.decoder_path, overwrite=True, save_format="tf")
+        # feature_encoder.save(filepath=model_manager.encoder_path, overwrite=True, save_format="tf")
+        # decoder.save(filepath=model_manager.decoder_path, overwrite=True, save_format="tf")
+        feature_encoder.save_weights(filepath=model_manager.encoder_path, overwrite=True)
+        decoder.save_weights(filepath=model_manager.decoder_path, overwrite=True)
         # Print the end epoch statistics
         epoch_end_statistics(epoch, start, total_loss / num_steps)
         # Storing the epoch end loss value to plot later
@@ -61,10 +64,13 @@ def model_training_message():
 
 # Creates a start epoch header
 def epoch_start_statistics(epoch, epoch_start_time):
-    print('\n********************************************************************************************************************')
-    print('\n####################################################################################################################')
+    print(
+        '\n********************************************************************************************************************')
+    print(
+        '\n####################################################################################################################')
     print('>>>> EPOCH NUMBER:', epoch, '\nSUCCESSFULLY INITIALIZED AT:', time.ctime(epoch_start_time))
-    print('#####################################################################################################################')
+    print(
+        '####################################################################################################################')
     print(
         '------------------------------------------------------------------------------------------------------------------')
 

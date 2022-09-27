@@ -93,7 +93,10 @@ image_captioning_dataset = generate_batched_dataset(batch_size, buffer_size, tra
 # 5. GENERATE THE IMAGE ENCODER FOR ENCODING IMAGE FEATURES TO A MULTIMODAL EMBEDDING
 # ------------------------------------------------------------------------------------------------------------------
 feature_encoder = generate_feature_encoder(embedding_size=embedding_size, input_size=inception_model_output_size)
-# feature_encoder = tf.keras.models.load_model(filepath=encoder_checkpoint_path)
+# Load the pre-saved training weights if required
+feature_encoder.load_model_weights(filepath=encoder_checkpoint_path,
+                                   batch_size=batch_size,
+                                   feature_size=inception_model_output_size)
 # ------------------------------------------------------------------------------------------------------------------
 # 6. GENERATE THE GRU BASED DECODER FOR THE CAPTIONS
 # ------------------------------------------------------------------------------------------------------------------
@@ -102,7 +105,8 @@ decoder = generate_decoder(batch_size=batch_size,
                            embedding_size=embedding_size,
                            vocabulary_size=text_vectorization.vocabulary_size(),
                            maximum_caption_length=maximum_caption_length)
-# decoder = tf.keras.models.load_model(filepath=decoder_checkpoint_path)
+# decoder = tf.keras.models.load_model(filepath=decoder_checkpoint_path, compile=True)
+decoder.load_weights(filepath=decoder_checkpoint_path)
 # ------------------------------------------------------------------------------------------------------------------
 # 7. GENERATE THE OPTIMIZERS AND LOSS FUNCTION AND SAVE ALL THE DETAILS IN THE MODEL_MANAGER
 # ------------------------------------------------------------------------------------------------------------------
@@ -129,6 +133,3 @@ loss_plot = initialize_pipeline_training(image_captioning_dataset=image_captioni
 # 8. VISUALIZING THE TRAINING (PLOT THE EPOCH VS LOSS GRAPH TO VISUALIZE MODEL TRAINING)
 # ------------------------------------------------------------------------------------------------------------------
 epoch_vs_loss_plot(loss_plot)
-
-
-print('Done')
