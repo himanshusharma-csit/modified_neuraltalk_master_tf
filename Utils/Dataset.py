@@ -1,3 +1,4 @@
+import json
 import os.path
 import numpy as np
 from tqdm import tqdm
@@ -40,8 +41,8 @@ def load_images(directory_name, training_image_names, input_shape):
 
     # Now, map this training_image_name tf.dataset with the actual images and generate their new tf.dataset as well
     # training_image_dataset = list(map(lambda image_name: load_image(directory_name, image_name, x, y, channels), training_image_names.as_numpy_iterator()))
-    training_image_dataset = list( map(lambda image_name: load_image(directory_name, image_name, x, y, channels),
-                                       tqdm(training_image_names, desc="LOADING IMAGES >>> ", ascii=False, ncols=100)))
+    training_image_dataset = list(map(lambda image_name: load_image(directory_name, image_name, x, y, channels),
+                                      tqdm(training_image_names, desc="LOADING IMAGES >>> ", ascii=False, ncols=100)))
 
     # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
     print('>>> Training images retrieved from the user defined directory...')
@@ -118,3 +119,37 @@ def load_features(image_name):
     image_name = image_name = image_name.replace('.jpg', '.npy')
     image_feature = np.load(image_name)
     return image_feature
+
+
+# This method saves the user configuration into a json file for further use
+def model_configuration_dictionary(batch_size=None,
+                                   buffer_size=None,
+                                   embedding_size=None,
+                                   hidden_units=None,
+                                   image_feature_size=None,
+                                   maximum_caption_length=None,
+                                   encoder_path=None,
+                                   decoder_path=None,
+                                   image_features_path=None,
+                                   image_directory_path=None):
+    # Create a dict with the following received configurations
+    configurations = {"batch_size": batch_size,
+                      "buffer_size": buffer_size,
+                      "embedding_size": embedding_size,
+                      "hidden_units": hidden_units,
+                      "image_feature_size": image_feature_size,
+                      "maximum_caption_length": maximum_caption_length,
+                      "encoder_path": encoder_path,
+                      "decoder_path": decoder_path,
+                      "image_features_path": image_features_path,
+                      "image_directory_path": image_directory_path}
+
+    # Configuration dictionary has been created, now return
+    return configurations
+
+
+# This method saves the model configuration into an external json file
+def save_configurations(filepath=None, configurations=None):
+    with open(filepath, "w+") as json_file:
+        json.dump(configurations, json_file, indent=6)
+        print(">>> Configurations dumped successfully...")

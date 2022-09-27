@@ -7,7 +7,8 @@ from Utils.Training import initialize_pipeline_training
 from Utils.FeatureEncoder import generate_feature_encoder
 from Utils.CaptionLoader import load_captions, process_captions
 from Utils.ImageEncoder import generate_inception_feature_extractor
-from Utils.Dataset import split_dataset, load_images, generate_batched_dataset
+from Utils.Dataset import split_dataset, load_images, generate_batched_dataset, model_configuration_dictionary, \
+    save_configurations
 from Utils.ModelDetails import ModelDetails, generate_sparse_categorical_crossentropy_loss, generate_adam_optimizer
 
 # ------------------------------------------------------------------------------------------------------------------
@@ -16,9 +17,9 @@ from Utils.ModelDetails import ModelDetails, generate_sparse_categorical_crossen
 caption_file_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\captions.txt')
 image_directory_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Data\Flickr_8K\Images')
 image_features_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Features\Flickr_8K')
-model_saving_path = os.path.abspath('D:\modified_neuraltalk_master_tf')
 encoder_checkpoint_path = os.path.abspath("D:\modified_neuraltalk_master_tf\FeatureEncoderCheckpoints\FE_Checkpoint")
 decoder_checkpoint_path = os.path.abspath("D:\modified_neuraltalk_master_tf\DecoderCheckpoints\D_Checkpoint")
+configuration_json_path = os.path.abspath("D:\modified_neuraltalk_master_tf\Configurations\configurations.json")
 
 # ------------------------------------------------------------------------------------------------------------------
 # 0.1 SETTING THE HYPER-PARAMETERS FOR OUR MODEL
@@ -94,9 +95,9 @@ image_captioning_dataset = generate_batched_dataset(batch_size, buffer_size, tra
 # ------------------------------------------------------------------------------------------------------------------
 feature_encoder = generate_feature_encoder(embedding_size=embedding_size, input_size=inception_model_output_size)
 # Load the pre-saved training weights if required
-feature_encoder.load_model_weights(filepath=encoder_checkpoint_path,
-                                   batch_size=batch_size,
-                                   feature_size=inception_model_output_size)
+# feature_encoder.load_model_weights(filepath=encoder_checkpoint_path,
+#                                    batch_size=batch_size,
+#                                    feature_size=inception_model_output_size)
 # ------------------------------------------------------------------------------------------------------------------
 # 6. GENERATE THE GRU BASED DECODER FOR THE CAPTIONS
 # ------------------------------------------------------------------------------------------------------------------
@@ -106,9 +107,9 @@ decoder = generate_decoder(batch_size=batch_size,
                            vocabulary_size=text_vectorization.vocabulary_size(),
                            maximum_caption_length=maximum_caption_length)
 # Load the pre-saved training weights if required
-decoder.load_model_weights(filepath=decoder_checkpoint_path,
-                           batch_size=batch_size,
-                           embedding_size=embedding_size)
+# decoder.load_model_weights(filepath=decoder_checkpoint_path,
+#                            batch_size=batch_size,
+#                            embedding_size=embedding_size)
 # ------------------------------------------------------------------------------------------------------------------
 # 7. GENERATE THE OPTIMIZERS AND LOSS FUNCTION AND SAVE ALL THE DETAILS IN THE MODEL_MANAGER
 # ------------------------------------------------------------------------------------------------------------------
@@ -132,6 +133,23 @@ loss_plot = initialize_pipeline_training(image_captioning_dataset=image_captioni
                                          model_manager=model_manager)
 
 # ------------------------------------------------------------------------------------------------------------------
-# 8. VISUALIZING THE TRAINING (PLOT THE EPOCH VS LOSS GRAPH TO VISUALIZE MODEL TRAINING)
+# 10. SAVING ALL THE MODEL CONFIGURATIONS FOR FUTURE PREDICT USE
+# ------------------------------------------------------------------------------------------------------------------
+model_configurations = model_configuration_dictionary(batch_size,
+                                                      buffer_size,
+                                                      embedding_size,
+                                                      hidden_units,
+                                                      inception_model_output_size,
+                                                      maximum_caption_length,
+                                                      encoder_checkpoint_path,
+                                                      decoder_checkpoint_path,
+                                                      image_features_path,
+                                                      image_directory_path)
+
+# Configuration dictionary have been created, now save it to external json file
+save_configurations(filepath=configuration_json_path, configurations=model_configurations)
+
+# ------------------------------------------------------------------------------------------------------------------
+# 9. VISUALIZING THE TRAINING (PLOT THE EPOCH VS LOSS GRAPH TO VISUALIZE MODEL TRAINING)
 # ------------------------------------------------------------------------------------------------------------------
 epoch_vs_loss_plot(loss_plot)
