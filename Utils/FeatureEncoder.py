@@ -26,9 +26,11 @@ class FeatureEncoder(tf.keras.Model):
     # Initialize the model training layers and then load the pre-saved weights
     def load_model_weights(self, filepath=None, batch_size=None, feature_size=None):
         # Initialize the instance of feature encoder with random weights
-        self(tf.random.normal(shape=(batch_size, 1,feature_size)))  # Batch features are of shape: (batch_size, 1, feature_size) e.g. (128, 1, 2048)
+        # Batch features are of shape: (batch_size, 1, feature_size) e.g. (128, 1, 2048)
+        self(tf.random.normal(shape=(batch_size, 1, feature_size)))
         # Now, load the pre-saved weights to the model
         self.load_weights(filepath=filepath)
+
 
 # This method returns an instance of the feature encoder based on the user defined image encoding size
 def generate_feature_encoder(embedding_size=None, input_size=None):

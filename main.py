@@ -105,8 +105,10 @@ decoder = generate_decoder(batch_size=batch_size,
                            embedding_size=embedding_size,
                            vocabulary_size=text_vectorization.vocabulary_size(),
                            maximum_caption_length=maximum_caption_length)
-# decoder = tf.keras.models.load_model(filepath=decoder_checkpoint_path, compile=True)
-decoder.load_weights(filepath=decoder_checkpoint_path)
+# Load the pre-saved training weights if required
+decoder.load_model_weights(filepath=decoder_checkpoint_path,
+                           batch_size=batch_size,
+                           embedding_size=embedding_size)
 # ------------------------------------------------------------------------------------------------------------------
 # 7. GENERATE THE OPTIMIZERS AND LOSS FUNCTION AND SAVE ALL THE DETAILS IN THE MODEL_MANAGER
 # ------------------------------------------------------------------------------------------------------------------

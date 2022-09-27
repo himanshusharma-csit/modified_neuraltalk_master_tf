@@ -52,9 +52,27 @@ class Decoder(tf.keras.Model):
     def reset_states(self, batch_size):
         return tf.zeros((batch_size, self.hidden_units))
 
+    # Initialize the model training layers and then load the pre-saved weights
+    def load_model_weights(self, filepath=None, batch_size=None, embedding_size=None):
+        # Initialize the instance of decoder with random weights
+        # Hidden shape: (batch_size, embedding_size)
+        hidden = self.reset_states(batch_size=batch_size)
+        # Decoder_input: (batch_size, 1) {<startsen> index is 2, so using it here. Even though we can initialize with any index}
+        dec_input = tf.expand_dims([2] * batch_size, 1)
+        # Features: (batch_size, 1, embedding_size)
+        features = tf.random.normal(shape=(batch_size, 1, embedding_size))
+        # Now, initialize the decoder
+        self(dec_input, features, hidden)
+        # Now, load the pre-saved weights to the model
+        self.load_weights(filepath=filepath)
+
 
 # This method generates a decoder based on user defined configurations
-def generate_decoder(batch_size=None, hidden_units=None, embedding_size=None, vocabulary_size=None, maximum_caption_length=None):
+def generate_decoder(batch_size=None,
+                     hidden_units=None,
+                     embedding_size=None,
+                     vocabulary_size=None,
+                     maximum_caption_length=None):
     # Create a decoder instance with the required user defined configurations
     decoder = Decoder(batch_size, hidden_units, embedding_size, vocabulary_size, maximum_caption_length)
     # Decoder weights have been initialized, now return the instance
