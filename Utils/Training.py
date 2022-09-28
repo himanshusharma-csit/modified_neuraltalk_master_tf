@@ -20,7 +20,7 @@ def initialize_pipeline_training(image_captioning_dataset=None,
                                  model_manager=None):
     loss_plot = []
     start_epoch = 0
-    EPOCHS = 10
+    EPOCHS = 20
     num_steps = model_manager.training_sample_count // model_manager.batch_size
     model_training_message()
 

@@ -1,6 +1,7 @@
 import json
 import os.path
 import numpy as np
+import pickle as pkl
 from tqdm import tqdm
 import tensorflow as tf
 
@@ -20,7 +21,7 @@ def split_dataset(image_names):
     data_length = len(image_names)
 
     # Use 80% of images for training, 10% for validation and 10% for testing
-    training_data_size = int(data_length * 0.01)
+    training_data_size = int(data_length * 0.8)
     validation_data_size = int(data_length * 0.1)
 
     # Calculate the splitting index based on the training, validation and testing lengths
@@ -45,7 +46,7 @@ def load_images(directory_name, training_image_names, input_shape):
                                       tqdm(training_image_names, desc="LOADING IMAGES >>> ", ascii=False, ncols=100)))
 
     # Once the training images have been retrieved, generate a tf.Dataset for image name and their individual images and return
-    print('>>> Training images retrieved from the user defined directory...')
+    print('>>> Images retrieved from the user defined directory...')
     return training_image_dataset
 
 
@@ -121,6 +122,21 @@ def load_features(image_name):
     return image_feature
 
 
+# This method prepares the testing image dataset by loading the image features into the main memory
+def prepare_testing_dataset(image_features_path, testing_dataset):
+    # Create empty new lists
+    x = list()
+    # Iterate over each training dataset and fetch their pre-saved numpy features
+    for image_name in tqdm(testing_dataset, desc="PREPARING TESTING  DATASET >>> ", ascii=False, ncols=100):
+        absolute_image_path = os.path.join(image_features_path, image_name)
+        # Load the feature back to the main memory now, using the absolute image path
+        image_feature = load_features(absolute_image_path)
+        # Append the feature into the new list
+        x.append(tf.expand_dims(image_feature, 1))
+    # Append complete for the overall training dataset, so return the labeled dataset
+    return x
+
+
 # This method saves the user configuration into a json file for further use
 def model_configuration_dictionary(batch_size=None,
                                    buffer_size=None,
@@ -131,7 +147,11 @@ def model_configuration_dictionary(batch_size=None,
                                    encoder_path=None,
                                    decoder_path=None,
                                    image_features_path=None,
-                                   image_directory_path=None):
+                                   image_directory_path=None,
+                                   caption_file_path=None,
+                                   vocabulary_size=None,
+                                   vocabulary_path=None,
+                                   image_encoder_path=None):
     # Create a dict with the following received configurations
     configurations = {"batch_size": batch_size,
                       "buffer_size": buffer_size,
@@ -142,8 +162,11 @@ def model_configuration_dictionary(batch_size=None,
                       "encoder_path": encoder_path,
                       "decoder_path": decoder_path,
                       "image_features_path": image_features_path,
-                      "image_directory_path": image_directory_path}
-
+                      "image_directory_path": image_directory_path,
+                      "caption_file_path": caption_file_path,
+                      "vocabulary_size": vocabulary_size,
+                      "vocabulary_path": vocabulary_path,
+                      "image_encoder_path": image_encoder_path}
     # Configuration dictionary has been created, now return
     return configurations
 
@@ -153,3 +176,18 @@ def save_configurations(filepath=None, configurations=None):
     with open(filepath, "w+") as json_file:
         json.dump(configurations, json_file, indent=6)
         print(">>> Configurations dumped successfully...")
+
+
+# This method saves the vocabulary into an external file
+def save_vocabulary(filepath=None, vocabulary=None):
+    with open(filepath, 'wb') as vocabulary_file:
+        pkl.dump(vocabulary, vocabulary_file)
+        print(">>> Vocabulary dumped successfully...")
+
+
+# This method loads the vocabulary object from an external file
+def load_vocabulary(filepath=None):
+    with open(filepath, 'rb') as vocabulary_file:
+        vocabulary = pkl.load(vocabulary_file)
+        print(">>> Vocabulary loaded successfully...")
+        return vocabulary

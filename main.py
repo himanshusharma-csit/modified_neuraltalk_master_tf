@@ -7,9 +7,9 @@ from Utils.Training import initialize_pipeline_training
 from Utils.FeatureEncoder import generate_feature_encoder
 from Utils.CaptionLoader import load_captions, process_captions
 from Utils.ImageEncoder import generate_inception_feature_extractor
-from Utils.Dataset import split_dataset, load_images, generate_batched_dataset, model_configuration_dictionary, \
-    save_configurations
 from Utils.ModelDetails import ModelDetails, generate_sparse_categorical_crossentropy_loss, generate_adam_optimizer
+from Utils.Dataset import split_dataset, load_images, generate_batched_dataset, model_configuration_dictionary, \
+    save_configurations, extract_features, save_vocabulary
 
 # ------------------------------------------------------------------------------------------------------------------
 # 0.0 SETTING THE DIRECTORY AND FILE PATHS (FOR LOADING, SAVING AND STORING DATASET FILES)
@@ -20,6 +20,8 @@ image_features_path = os.path.abspath('D:\modified_neuraltalk_master_tf\Features
 encoder_checkpoint_path = os.path.abspath("D:\modified_neuraltalk_master_tf\FeatureEncoderCheckpoints\FE_Checkpoint")
 decoder_checkpoint_path = os.path.abspath("D:\modified_neuraltalk_master_tf\DecoderCheckpoints\D_Checkpoint")
 configuration_json_path = os.path.abspath("D:\modified_neuraltalk_master_tf\Configurations\configurations.json")
+vocabulary_path = os.path.abspath("D:\modified_neuraltalk_master_tf\Vocabulary\Flickr_8K\Vocabulary")
+image_encoder_path = os.path.abspath("D:\modified_neuraltalk_master_tf\ImageEncoderCheckpoints\IE_Checkpoint")
 
 # ------------------------------------------------------------------------------------------------------------------
 # 0.1 SETTING THE HYPER-PARAMETERS FOR OUR MODEL
@@ -34,6 +36,8 @@ embedding_size = 256
 hidden_units = 256
 # Inception v3 output dimension
 inception_model_output_size = None
+# Vocabulary size of the dataset
+vocabulary_size = None
 
 # ------------------------------------------------------------------------------------------------------------------
 # 0.1 (OPTIONAL) LOGGING ALL THE CPU/GPU TASKS OVER CONSOLE
@@ -62,19 +66,21 @@ training_image_names, validation_image_names, testing_image_names = split_datase
 # ------------------------------------------------------------------------------------------------------------------
 # 2. PREPROCESS THE IMAGES (FEATURE EXTRACTION)
 # ------------------------------------------------------------------------------------------------------------------
-# Generate the image encoding model
-image_encoder, inception_model_output_size = generate_inception_feature_extractor()
+# Generate the image encoding model and save its weights
+image_encoder, inception_model_output_size = generate_inception_feature_extractor(image_encoder_path)
 
 # Load the training images into the main memory of the predefined input size
 with tf.device('/CPU:0'):
     training_image_dataset = load_images(image_directory_path, training_image_names, image_encoder.input_shape)
-    # validation_image_dataset = load_images(image_directory_path, validation_image_names, image_encoder.input_shape)
-    # testing_image_dataset = load_images(image_directory_path, testing_image_names, image_encoder.input_shape)
+    validation_image_dataset = load_images(image_directory_path, validation_image_names, image_encoder.input_shape)
+    testing_image_dataset = load_images(image_directory_path, testing_image_names, image_encoder.input_shape)
 
 # Extract the features of the training images
 # Image features have been extracted for now, so commenting this code section
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#     extract_features(image_features_path, image_encoder, training_image_dataset)
+    extract_features(image_features_path, image_encoder, training_image_dataset)
+    extract_features(image_features_path, image_encoder, validation_image_dataset)
+    extract_features(image_features_path, image_encoder, testing_image_dataset)
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # ------------------------------------------------------------------------------------------------------------------
@@ -85,6 +91,10 @@ with tf.device('/CPU:0'):
 train_X, train_Y, text_vectorization, maximum_caption_length = preprocess_text_dataset(image_features_path,
                                                                                        training_image_names,
                                                                                        processed_image_captions)
+# Save the vectorization instance and vocabulary.txt size as it is used while testing
+save_vocabulary(filepath=vocabulary_path, vocabulary=text_vectorization.get_vocabulary())
+vocabulary_size = text_vectorization.vocabulary_size()
+
 # ------------------------------------------------------------------------------------------------------------------
 # 4. DATASET ABSTRACTION (GENERATE A TF.DATASET VERSION OF DATA)
 # ------------------------------------------------------------------------------------------------------------------
@@ -120,9 +130,6 @@ model_manager = ModelDetails(loss=generate_sparse_categorical_crossentropy_loss(
                              encoder_path=encoder_checkpoint_path,
                              decoder_path=decoder_checkpoint_path)
 
-# Initialize the model weights with the checkpoints
-# feature_encoder, decoder = load_pipeline_weights(model_manager, feature_encoder, decoder)
-
 # ------------------------------------------------------------------------------------------------------------------
 # 8. MODEL TRAINING (TRAIN THE MODEL ON IMAGE FEATURES TO PREDICT THE CAPTIONS AND APPLY BACKPROPAGATION ACCORDINGLY TO ADJUST WEIGHTS)
 # ------------------------------------------------------------------------------------------------------------------
@@ -144,7 +151,11 @@ model_configurations = model_configuration_dictionary(batch_size,
                                                       encoder_checkpoint_path,
                                                       decoder_checkpoint_path,
                                                       image_features_path,
-                                                      image_directory_path)
+                                                      image_directory_path,
+                                                      caption_file_path,
+                                                      vocabulary_size,
+                                                      vocabulary_path,
+                                                      image_encoder_path)
 
 # Configuration dictionary have been created, now save it to external json file
 save_configurations(filepath=configuration_json_path, configurations=model_configurations)
