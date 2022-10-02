@@ -12,7 +12,7 @@ class Attention(tf.keras.Model):
 
     def call(self, batch_features=None, hidden_activations=None):
         hidden_with_time_axis = tf.expand_dims(hidden_activations, 1)
-        # Pass the (batch_size, 25*2048) through the first hidden layer
+        # Pass the (batch_size, 25*256) through the first hidden layer
         attention_activations = tf.nn.tanh(self.hidden_one(batch_features) + self.hidden_two(hidden_with_time_axis))
         score = self.attention_output(attention_activations)
         attention_weights = tf.nn.softmax(score, axis=1)

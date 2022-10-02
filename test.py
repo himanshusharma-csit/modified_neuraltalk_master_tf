@@ -1,7 +1,9 @@
 import os
 import json
 from PIL import Image
+import tensorflow as tf
 from Utils.Decoder import generate_decoder
+from Utils.EvaluationMetrics import calculate_bleu_score
 from Utils.FeatureEncoder import generate_feature_encoder
 from Utils.PredictionManager import generate_prediction_manager
 from Utils.CaptionLoader import load_captions, process_captions
@@ -79,14 +81,27 @@ decoder.attention.load_model_weights(filepath=attention_path, batch_size=batch_s
 # ------------------------------------------------------------------------------------------------------------------
 # 4.0 INITIALIZE THE PREDICTION MANAGER WITH ALL THE NECESSARY CONFIGURATIONS AND GENERATE CAPTIONS
 # ------------------------------------------------------------------------------------------------------------------
+vocabulary = load_vocabulary(vocabulary_path)
+# Word to index mapping for prediction
+word_to_index = tf.keras.layers.StringLookup(mask_token="", vocabulary=vocabulary)
+# Index to word mapping for prediction
+index_to_word = tf.keras.layers.StringLookup(mask_token="", vocabulary=vocabulary, invert=True)
+total_bleu_score = 0
 prediction_manger = generate_prediction_manager(configurations, feature_encoder, decoder)
-predicted_caption = prediction_manger.predict(testing_image_features[10], load_vocabulary(vocabulary_path))
-image_absolute_path = os.path.join(os.path.abspath("D:\modified_neuraltalk_master_tf\Data\Flickr_8K\Images"), testing_image_names[10])
-image = Image.open(image_absolute_path)
-# image.show()
-print(
-    '\n------------------------------------------------------------------------------------------------------------------')
-print("Original Caption: ", processed_image_captions[testing_image_names[10]])
-print("Generated Caption: ", *predicted_caption)
-print(
-    '\n------------------------------------------------------------------------------------------------------------------')
+
+for index in range(0, 100):
+    predicted_caption = prediction_manger.predict(testing_image_features[index], word_to_index, index_to_word)
+    image_absolute_path = os.path.join(os.path.abspath("D:\modified_neuraltalk_master_tf\Data\Flickr_8K\Images"), testing_image_names[index])
+    # image = Image.open(image_absolute_path)
+    # image.show()
+    print(
+        '\n------------------------------------------------------------------------------------------------------------------')
+    print("Image: ", testing_image_names[index])
+    print("Original Caption: ", processed_image_captions[testing_image_names[index]])
+    print("Generated Caption: ", *predicted_caption)
+    individual_bleu_score = calculate_bleu_score(reference=processed_image_captions[testing_image_names[index]], prediction=predicted_caption, ngrams=1)
+    total_bleu_score += individual_bleu_score
+    print("BLEU-1 Score: ", individual_bleu_score)
+    print(
+        '\n------------------------------------------------------------------------------------------------------------------')
+print("Average Bleu Score: ", (total_bleu_score/100)*100)

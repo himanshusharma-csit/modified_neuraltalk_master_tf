@@ -1,5 +1,4 @@
 import tensorflow as tf
-from Utils.Attention import generate_attention_instance
 
 
 # This class deals with all the model details of the image captioning pipeline
@@ -79,7 +78,7 @@ def training_step(image_tensor=None, target=None, feature_encoder=None,
         # Calculate the total batch loss
         total_loss = (loss / int(target.shape[1]))
         # Calculate total trainable parameters
-        trainable_variables = feature_encoder.trainable_variables + decoder.trainable_variables
+        trainable_variables = feature_encoder.trainable_variables + decoder.trainable_variables + decoder.attention.trainable_weights
         # Calculate and apply gradient adjust over the trainable variables
         gradients = tape.gradient(loss, trainable_variables)
         model_manager.optimizer.apply_gradients(zip(gradients, trainable_variables))

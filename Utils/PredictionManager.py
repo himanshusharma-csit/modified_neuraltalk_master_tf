@@ -20,11 +20,7 @@ class PredictionManager:
         print(">>> Prediction manager instance initiated...")
 
     # Predicts the captions for the incoming image feature
-    def predict(self, image_feature, vocabulary):
-        # Word to index mapping for prediction
-        word_to_index = tf.keras.layers.StringLookup(mask_token="", vocabulary=vocabulary)
-        # Index to word mapping for prediction
-        index_to_word = tf.keras.layers.StringLookup(mask_token="", vocabulary=vocabulary, invert=True)
+    def predict(self, image_feature, word_to_index, index_to_word):
         # Encoder the image features using feature encoder
         image_feature = self.feature_encoder(image_feature)
         # Reshape (5, 5, 256) to (25, 256)
@@ -41,7 +37,7 @@ class PredictionManager:
             # Calculate the attention context for the batch of images
             attention_context, _ = self.decoder.attention(batch_features=image_feature, hidden_activations=hidden)
             # Generate the predicts for the current word
-            predictions, hidden = self.decoder(dec_input, image_feature[:,i:i+1,:], hidden)
+            predictions, hidden = self.decoder(dec_input, attention_context, hidden)
             # Convert prediction to vocabulary word
             predicted_index = tf.random.categorical(predictions[0], 1)[0][0].numpy()
             predicted_word = tf.compat.as_text(index_to_word(predicted_index).numpy())
