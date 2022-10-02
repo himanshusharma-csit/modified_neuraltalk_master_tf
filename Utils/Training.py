@@ -2,6 +2,8 @@ import time
 import absl.logging
 from tqdm import tqdm
 import tensorflow as tf
+
+from Utils.Attention import generate_attention_instance
 from Utils.ModelDetails import training_step
 
 # To avoid displaying the save format warning everytime, we, verbose the logging here
@@ -29,22 +31,18 @@ def initialize_pipeline_training(image_captioning_dataset=None,
         total_loss = 0
 
         epoch_start_statistics(epoch, start)
-        for (batch, (img_tensor, target)) in tqdm(tf.data.Dataset.enumerate(image_captioning_dataset), ncols=100):
+        for (batch, (img_tensor, target)) in tqdm(tf.data.Dataset.enumerate(image_captioning_dataset), desc="BATCH TRAINING >>>", ncols=100):
             # For now target is (64,1,max_size), so we squash the 1 dimension.
             # This is a bit of hack... not happy about it.
-            batch_loss, t_loss = training_step(image_tensor=img_tensor,
-                                               target=tf.squeeze(target),
-                                               feature_encoder=feature_encoder,
-                                               decoder=decoder,
-                                               tokenizer=text_vectorizer,
-                                               model_manager=model_manager)
+            batch_loss, t_loss = training_step(image_tensor=img_tensor, target=tf.squeeze(target), feature_encoder=feature_encoder,
+                                               decoder=decoder, tokenizer=text_vectorizer, model_manager=model_manager)
             # Add the batch loss to the overall total loss
             total_loss += t_loss
-        # Save the encoder and decoder model states after every epoch
-        # feature_encoder.save(filepath=model_manager.encoder_path, overwrite=True, save_format="tf")
-        # decoder.save(filepath=model_manager.decoder_path, overwrite=True, save_format="tf")
+        # Save the encoder and decoder, attention and embedding model states after every epoch
         feature_encoder.save_weights(filepath=model_manager.encoder_path, overwrite=True)
         decoder.save_weights(filepath=model_manager.decoder_path, overwrite=True)
+        decoder.attention.save_weights(filepath=model_manager.attention_path, overwrite=True)
+        decoder.save_word_embeddings(filepath=model_manager.embedding_path)
         # Print the end epoch statistics
         epoch_end_statistics(epoch, start, total_loss / num_steps)
         # Storing the epoch end loss value to plot later

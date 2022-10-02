@@ -1,6 +1,6 @@
-import numpy as np
-import numpy.random
 import tensorflow as tf
+import pickle as pkl
+from Utils.Attention import Attention
 
 
 # This class deals with the decoder that converts input word indices into a multimodal vector and then generates their decoding
@@ -14,6 +14,7 @@ class Decoder(tf.keras.Model):
         super(Decoder, self).__init__()
         self.hidden_units = hidden_units
         self.maximum_caption_length = maximum_caption_length
+        self.attention = Attention(hidden_units=hidden_units)
         # Create an input layer for the decoder
         self.input_layer = tf.keras.layers.InputLayer(input_shape=(batch_size, 1))
         # Pass the input layer indices through the embedding layer
@@ -27,7 +28,7 @@ class Decoder(tf.keras.Model):
                                        recurrent_initializer='glorot_uniform')
         # Collect the recurrent data using a hidden layer
         self.hidden_layer = tf.keras.layers.Dense(self.hidden_units)
-        # Now, generate the index predictions on the word vocabulary
+        # Now, generate the index predictions on the word vocabulary.txt
         self.output_layer = tf.keras.layers.Dense(vocabulary_size)
         print(">>> Decoder generation complete...")
 
@@ -43,9 +44,9 @@ class Decoder(tf.keras.Model):
         output, state = self.gru(x)
         # Pass the recurrent generated output through the hidden layer
         x = self.hidden_layer(output)
-        # Pass the hidden layer output through the vocabulary sized dense layer
+        # Pass the hidden layer output through the vocabulary.txt sized dense layer
         x = self.output_layer(x)
-        # Return the output probabilities of vocabulary along with GRU's internal states for this input
+        # Return the output probabilities of vocabulary.txt along with GRU's internal states for this input
         return x, state
 
     # Resets a given tensor for upcoming processing
@@ -57,7 +58,8 @@ class Decoder(tf.keras.Model):
         # Initialize the instance of decoder with random weights
         # Hidden shape: (batch_size, embedding_size)
         hidden = self.reset_states(batch_size=batch_size)
-        # Decoder_input: (batch_size, 1) {<startsen> index is 2, so using it here. Even though we can initialize with any index}
+        # Decoder_input: (batch_size, 1)
+        # {<startsen> index is 2, so using it here. Even though we can initialize with any index}
         dec_input = tf.expand_dims([2] * batch_size, 1)
         # Features: (batch_size, 1, embedding_size)
         features = tf.random.normal(shape=(batch_size, 1, embedding_size))
@@ -65,6 +67,19 @@ class Decoder(tf.keras.Model):
         self(dec_input, features, hidden)
         # Now, load the pre-saved weights to the model
         self.load_weights(filepath=filepath)
+
+    # This method saves the learnt word embeddings
+    def save_word_embeddings(self, filepath=None):
+        with open(filepath, 'wb') as features_file:
+            pkl.dump(self.embedding, features_file)
+
+    # This method loads the learnt word embeddings into the main memory
+    def load_word_embeddings(self, filepath=None):
+        with open(filepath, "rb") as embedding_file:
+            # Load the pre-learnt embeddings into the main memory
+            embedding_layer = pkl.load(embedding_file)
+            # Update the existing embedding instance
+            self.embedding = embedding_layer
 
 
 # This method generates a decoder based on user defined configurations
